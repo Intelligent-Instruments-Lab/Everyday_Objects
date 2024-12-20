@@ -45,10 +45,10 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
   
   //Get peer MAC address
   char macStr[18];
-  //Serial.print("Packet received from: ");
-  //snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+  // Serial.print("Packet received from: ");
+  // snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
   //         mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  //Serial.println(macStr);
+  // Serial.println(macStr);
 
   //Copy content incomingData into myData variable
   memcpy(&myData, incomingData, sizeof(myData));
@@ -83,6 +83,7 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
   Serial.printf("%u ", boardsStruct[myData.id-1].val10);
   Serial.printf("%u ", boardsStruct[myData.id-1].val11);
   Serial.printf("%.u\r ", boardsStruct[myData.id-1].val12);
+  Serial.println("");
   
 }
  
@@ -110,12 +111,14 @@ void setup() {
  
 void loop() {
   // Acess the variables for each board
-  /*int board1X = boardsStruct[0].x;
-  int board1Y = boardsStruct[0].y;
-  int board2X = boardsStruct[1].x;
-  int board2Y = boardsStruct[1].y;
-  int board3X = boardsStruct[2].x;
-  int board3Y = boardsStruct[2].y;*/
+  // int board1X = boardsStruct[0].val1;
+  // int board1Y = boardsStruct[0].val2;
+  // Serial.printf("%.2f ", boardsStruct[5].val1);
+  // Serial.printf("%.u\r ", boardsStruct[5].val12);
+  // int board2X = boardsStruct[1].x;
+  // int board2Y = boardsStruct[1].y;
+  // int board3X = boardsStruct[2].x;
+  // int board3Y = boardsStruct[2].y;
 
   //delay(10000);  
 }
