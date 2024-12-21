@@ -1,7 +1,7 @@
 /*
 This file connects the vessel esp receiver for up to 6 vessel sensors to NTMI.
 
-"https://s4ntp.org/NTMI/"
+"https://s4ntp.org/NTMI/".openOS
 
 - opens SerialPort of esp receiver
 - pipes esp data for 6 vessels into respective MKtls
@@ -11,7 +11,15 @@ which get applied to all running sounds.
 
 ToDo FV:
 - document existing vessels :
-which sensors exist on which vessel ID, ranges etc
+which sensors exist, with which vessel ID, ranges etc
+
+------ id  1    2    3    4    5    6    7    8    9    10    11    12
+Kit_1  1   magx magy magz angx angy angz accx accy accz flow  wt/pr touch
+Kit_2  2   magx magy magz angx angy angz accx accy accz flow  wt/pr touch
+
+Kit_3  3   magx magy magz angx angy angz accx accy accz 0     wt/pr 0
+Kit_4  4   0 ------------------------------------------------ pn34 ----
+Kit_6  6   magx magy magz gyrx gyry gyrz accx accy accz 0     bt17  0
 
 - tune one setting for vessel6
 - decide on sounds you like
