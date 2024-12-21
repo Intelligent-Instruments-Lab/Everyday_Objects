@@ -106,7 +106,6 @@ if (NTMI.vessel.devname.isNil) {
 							str.postln;
 						}
 					};
-					// key.cs.post;
 				});
 				t = Main.elapsedTime;
 				// "%, ".postf((t - t0).round(0.0001));
@@ -163,7 +162,7 @@ NTMI.vessel.desc = MKtlDesc.fromDict((
 
 	idInfo: ( ipAddress: "127.0.0.1", ),
 	protocol: \osc,
-	//////// not working yet like this
+	//////// should be done with collective set, not working yet
 	// collectives: (
 	// 	vals: (
 	// 		oscPath: 'vals',
@@ -222,21 +221,26 @@ MFdef(\setRelInf).(
 	1      // zoom factor for diffs
 ).postln;
 
-/// hown to use data for NTMI?
-(-33000, -32900 .. 33000).collect { |val|
-	val.abs ** 0.2 * val.sign }.plot;
+//// magnetometer is distance.squared,
+//// so it has very low values until very close.
+/// how to rescale data for NTMI?
 
+~magExpo = 1;      // linear
+~magExpo = 0.5;    // square root
+~magExpo = 0.3;    // more sensitive at distance
 
-~magExpo = 0.3;
-~magExpo = 1;
-(-1, 0.99 .. 1).collect { |val| val.abs ** ~magExpo * val.sign }.plot;
+(-33000, -32900 .. 33000).collect { |val| val.abs ** ~magExpo * val.sign }.plot;
+
+// better use it on normalized values
+(-1, -0.99 .. 1).collect { |val| (val.abs ** ~magExpo) * val.sign }.plot;
 */
 
 (
 // proximity curve for magnets:
 // 1 is linear, with less, e.g. 0.3, distant is more sensitive
-~magExpo = 0.3;
-// in the date receivind func,
+~magExpo = 0.5;
+
+// in the data receiving func,
 // take difference in mag etc values to change running sound params:
 MFdef(\vesIn).add(\mag2NTMI, {
 	var mapMags = { |val| val.abs ** ~magExpo * val.sign };
