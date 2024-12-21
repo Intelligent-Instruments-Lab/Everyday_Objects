@@ -50,9 +50,7 @@ MKtl(\vessel6).gui;
 // general setup
 
 NTMI.vessel = NTMI.vessel ? ();
-NTMI.vessel.minDiff = 4;
-~vessels = ();
-
+~vessels = ~vessels ? ();
 
 // open Serial port:
 (
@@ -61,7 +59,12 @@ SerialPort.closeAll;
 SerialPort.listDevices
 */
 NTMI.vessel = NTMI.vessel ? ();
+// on FV laptop:
 NTMI.vessel.devname = "/dev/cu.usbserial*".pathMatch.first;
+// on adc laptop (macOS 13.7.2)
+NTMI.vessel.devname = "/dev/cu.usbmodem*".pathMatch.first;
+// this should match both:
+NTMI.vessel.devname = "/dev/cu.usb*".pathMatch.first;
 
 if (NTMI.vessel.devname.isNil) {
 	"NTMI.vessel: could not find device matching \"/dev/cu.usbserial*\"".warn;
@@ -196,7 +199,7 @@ NTMI.vessel.desc = MKtlDesc.fromDict((
 
 ///// make all active vessels:
 // the vessel IDs we use:
-~vesselIDs = [1, 2, 3, 4, 5, 6];
+~vesselIDs = [1, 2, 3, 4, 6];
 // info on what is on each vessel goes here ...
 
 
@@ -206,11 +209,11 @@ NTMI.vessel.desc = MKtlDesc.fromDict((
 	~vessels.put(id, mktl);
 };
 
-/* test that reselt works
+/* test how relSet works
 MFdef(\setRelInf).(
-	[0, 1, 2],
-	[0.1, 0.1, -0.1],
-	1
+	[0, 1, 2],  // influx input chan indices to use
+	[0.1, 0.1, -0.1], // diff steps for each input
+	1      // zoom factor for diffs
 ).postln;
 
 /// hown to use data for NTMI?
