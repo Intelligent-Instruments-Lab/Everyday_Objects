@@ -97,8 +97,14 @@ if (NTMI.vessel.devname.isNil) {
 						str = str++byte.asAscii;
 					});
 					try {
-						// str.postln;
-						MFdef(\vesIn).(str.split($ ).drop(-1).collect(_.interpret));
+						// if message begins with id number, use it
+						if (str.first.isDecDigit) {
+
+							MFdef(\vesIn).(str.split($ ).drop(-1).collect(_.interpret))
+						} {
+							// else post it (e.g. debug messages)
+							str.postln;
+						}
 					};
 					// key.cs.post;
 				});
