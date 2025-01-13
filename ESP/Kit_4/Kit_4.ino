@@ -157,18 +157,18 @@ void loop() {
 
   // Set values to send
   myData.id = 4; //Set ID board number
-  myData.val1 = 0;
-  myData.val2 = 0;
-  myData.val3 = 0;
-  myData.val4 = 0;
-  myData.val5 = 0;
-  myData.val6 = 0;
-  myData.val7 = 0;
-  myData.val8 = 0;
-  myData.val9 = 0;
-  myData.val10 = 0;
+  myData.val1 = 1;
+  myData.val2 = 2;
+  myData.val3 = 3;
+  myData.val4 = 4;
+  myData.val5 = 5;
+  myData.val6 = 6;
+  myData.val7 = 7;
+  myData.val8 = 8;
+  myData.val9 = 9;
+  myData.val10 = 10;
   myData.val11 = analogRead(34);
-  myData.val12 = 0;
+  myData.val12 = 12;
   
 
 
