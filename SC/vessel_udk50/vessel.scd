@@ -31,7 +31,7 @@ adc:
 - make all existing vessels work in code
 - maybe they should have different mappings,
 even different receive funcs?
- - window with independent zooms for mag etc per vessel
+- window with independent zooms for mag etc per vessel
 
 // check which devices are there
 SerialPort.devices;
@@ -42,7 +42,8 @@ NTMI.vessel.rout.stop;
 NTMI.vessel.serial.close;
 
 // make a gui for first vessel w id 6
-MKtl(\vessel6).gui;
+MKtl(\vessel4).gui;
+MKtl(\vessel3).gui;
 
 
 */
@@ -64,7 +65,7 @@ NTMI.vessel.devname = "/dev/cu.usbserial*".pathMatch.first;
 // on adc laptop (macOS 13.7.2)
 NTMI.vessel.devname = "/dev/cu.usbmodem*".pathMatch.first;
 // this should match both:
-NTMI.vessel.devname = "/dev/cu.usb*".pathMatch.first;
+NTMI.vessel.devname = "/dev/cu.usb*".pathMatch.last;
 
 if (NTMI.vessel.devname.isNil) {
 	"NTMI.vessel: could not find device matching \"/dev/cu.usbserial*\"".warn;
@@ -75,7 +76,9 @@ if (NTMI.vessel.devname.isNil) {
 		NTMI.vessel.devname,
 		baudrate: 115200,    //check that baudrate matches w arduino sketch
 		crtscts: true
-	).postln;
+	);
+	"*** NTMI.vessel.serial: ".postln;
+	NTMI.vessel.serial.dump;
 
 
 	// read serial data sent from Arduino's Serial.println> we get 3 strings:
@@ -117,6 +120,7 @@ if (NTMI.vessel.devname.isNil) {
 
 
 MFdef(\vesIn).add(\post, { |dataArray| dataArray.drop(0).postln });
+MFdef(\vesIn).remove(\post);
 
 MFdef(\vesIn).add(\setMKtl, { |dataArray|
 	var id = dataArray.first;
@@ -216,9 +220,9 @@ NTMI.vessel.desc = MKtlDesc.fromDict((
 
 /* test how relSet works
 MFdef(\setRelInf).(
-	[0, 1, 2],  // influx input chan indices to use
-	[0.1, 0.1, -0.1], // diff steps for each input
-	1      // zoom factor for diffs
+[0, 1, 2],  // influx input chan indices to use
+[0.1, 0.1, -0.1], // diff steps for each input
+1      // zoom factor for diffs
 ).postln;
 
 //// magnetometer is distance.squared,
@@ -242,39 +246,44 @@ MFdef(\setRelInf).(
 
 // in the data receiving func,
 // take difference in mag etc values to change running sound params:
-MFdef(\vesIn).add(\mag2NTMI, {
+MFdef(\vesIn).add(\mag2NTMI, { |dataArr|
+	var id = dataArr.first;
+	var vessMKtl = ~vessels[id];
 	var mapMags = { |val| val.abs ** ~magExpo * val.sign };
 
-	var mags = MKtl(\vessel6).elAt(\mag);
-	// on mags rescale values so changes around the middle are bigger
-	var magdiffs = mapMags.(mags.value.unibi) - mapMags.(mags.prevValue.unibi);
+	// vessel4 has wet only?
+	if (id == 4) {
+		var wet = vessMKtl.elAt(\wet);
+		var wetdiff = wet.value - wet.prevValue;
+		if (wetdiff != 0) {
+			MFdef(\setRelInf).(9, wetdiff * 3, 1);
+		}
+	};
 
-	var angs = MKtl(\vessel6).elAt(\angvel);
-	var angdiffs = angs.value - angs.prevValue;
-	var accels = MKtl(\vessel6).elAt(\angvel);
-	var acceldiffs = accels.value - accels.prevValue;
-	var wet = MKtl(\vessel6).elAt(\wet);
-	var wetdiff = wet.value - wet.prevValue;
+	// vessel 3 has all except wet
+	if (id == 3) {
 
-	// do relative param set on all running slots
-	MFdef(\setRelInf).(
-		[0, 1, 2],
-		magdiffs * 3,
-		1
-	);
+		var mags = vessMKtl.elAt(\mag);
+		// on mags rescale values so changes around the middle are bigger
+		var magdiffs = mapMags.(mags.value.unibi) - mapMags.(mags.prevValue.unibi);
 
-	MFdef(\setRelInf).(
-		[0, 1, 2] + 3,
-		angdiffs * 3,
-		1
-	);
-	MFdef(\setRelInf).(
-		[0, 1, 2] + 6,
-		acceldiffs * 3,
-		1
-	);
+		var angs = vessMKtl.elAt(\angvel);
+		var angdiffs = angs.value - angs.prevValue;
 
-	MFdef(\setRelInf).(9, wetdiff * 3, 1);
+		var accels = vessMKtl.elAt(\angvel);
+		var acceldiffs = accels.value - accels.prevValue;
+
+		// do relative param set on the running slots:
+		// which influxIndices, the diffs, and a zoom (def. 1)
+		MFdef(\setRelInf).([0, 1, 2], magdiffs * 3, 1);
+		MFdef(\setRelInf).([0, 1, 2] + 3, angdiffs * 3, 1);
+		MFdef(\setRelInf).([0, 1, 2] + 6, acceldiffs * 3, 1);
+
+	};
+	// others can go here ...
+		if (id == 1) { };
+		if (id == 2) { };
+		if (id == 6) { };
 
 });
 );
