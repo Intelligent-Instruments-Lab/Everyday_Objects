@@ -3,6 +3,7 @@ This file connects the vessel esp receiver for up to 6 vessel sensors to NTMI.
 
 "https://s4ntp.org/NTMI/".openOS
 
+
 - opens SerialPort of esp receiver
 - pipes esp data for 6 vessels into respective MKtls
 - in the receiving function,
@@ -20,6 +21,12 @@ Kit_2  2   magx magy magz angx angy angz accx accy accz flow  wt/pr touch
 Kit_3  3   magx magy magz angx angy angz accx accy accz 0     wt/pr 0
 Kit_4  4   0 ------------------------------------------------ pn34 ----
 Kit_6  6   magx magy magz gyrx gyry gyrz accx accy accz 0     bt17  0
+
+MKtl(\vessel1).free; // mag, ang, acc, no water //
+MKtl(\vessel3).free; // mag, ang, acc, no water, in egg1
+MKtl(\vessel4).free; // just water in egg1
+MKtl(\vessel6).free; // mag, ang, acc, water - all in egg2
+
 
 - tune one setting for vessel6
 - decide on sounds you like
@@ -41,9 +48,18 @@ SerialPort.closeAll;
 NTMI.vessel.rout.stop;
 NTMI.vessel.serial.close;
 
-// make a gui for first vessel w id 6
-MKtl(\vessel4).gui;
-MKtl(\vessel3).gui;
+~vessels;  // should be all active vessels
+
+// make a gui for first vessels
+MKtl(\vessel1).gui; // mag, ang, acc, no water //
+MKtl(\vessel3).gui; // mag, ang, acc, no water, in egg1
+MKtl(\vessel4).gui; // just water in egg1
+MKtl(\vessel6).gui; // mag, ang, acc, water - all in egg2
+
+MFdef(\vesIn).enable(\postRaw);
+MFdef(\vesIn).disable(\postRaw);
+MFdef(\vesIn).enable(\post3);
+MFdef(\vesIn).disable(\post3);
 
 
 */
@@ -80,6 +96,7 @@ if (NTMI.vessel.devname.isNil) {
 	"*** NTMI.vessel.serial: ".postln;
 	NTMI.vessel.serial.dump;
 
+	NTMI.vessel.funcs = ();
 
 	// read serial data sent from Arduino's Serial.println> we get 3 strings:
 	// b[0,0,1...] for 10 buttons,
@@ -90,6 +107,7 @@ if (NTMI.vessel.devname.isNil) {
 		try{NTMI.vessel.rout.stop};
 		NTMI.vessel.rout = Routine({
 			var byte, str, res;
+			var data, id, mktl;
 			var t0 = Main.elapsedTime;
 			var t = t0;
 			inf.do { |i|
@@ -102,8 +120,13 @@ if (NTMI.vessel.devname.isNil) {
 					try {
 						// if message begins with id number, use it
 						if (str.first.isDecDigit) {
-
-							MFdef(\vesIn).(str.split($ ).drop(-1).collect(_.interpret))
+							data = str.split($ ).drop(-1).collect(_.interpret);
+							id = data[0];
+							mktl = ~vessels[id];
+							// update all Mktls
+							MFdef(\vesIn).(data);
+							// run a specific vesIn func for each device:
+							NTMI.vessel.funcs[id].value(mktl, data);
 						} {
 							// else post it (e.g. debug messages)
 							str.postln;
@@ -118,33 +141,89 @@ if (NTMI.vessel.devname.isNil) {
 	);
 };
 
+MFdef(\vesIn).add(\postRaw, { |dataArray| dataArray.drop(0).postln });
+MFdef(\vesIn).enable(\postRaw);
+MFdef(\vesIn).disable(\postRaw);
 
-MFdef(\vesIn).add(\post, { |dataArray| dataArray.drop(0).postln });
-MFdef(\vesIn).remove(\post);
+
+// with my  cube magnets:
+// bottom is roughly 0.0026 -> subtract zeroOffset
+// difference to zeroed bottom begins at 1m distance,
+// 0.001 at 30 cm
+// 0.003 at 15 cm
+// 0.01 at 10cm
+// 0.1 at 5cm
+// 0.5 when touching
+// after touching, center offset are gone
+
+MFdef(\vesIn).add(\post3, { |dataArray|
+	var magmag = MKtl(\vessel3).elAt(\mag).value.unibi;
+	var val = (magmag - ~zero).abs.sum;
+	// val.round(0.0001).postln;
+});
+
+MFdef(\vesIn).disable(\post3);
+
+/*
+~zero = 0;
+~zero = MKtl(\vessel3).elAt(\mag).value.unibi;
+
+~zero1 = MKtl(\vessel3).elAt(\mag).value.unibi;
+~zero2 = MKtl(\vessel3).elAt(\mag).value.unibi;
+~zero3 = MKtl(\vessel3).elAt(\mag).value.unibi;
+
+(~zero1 - ~zero2).abs.sum
+(~zero1 - ~zero3).abs.sum
+(~zero2 - ~zero3).abs.sum
+*/
+
+NTMI.vessel.ids = Set[];
 
 MFdef(\vesIn).add(\setMKtl, { |dataArray|
 	var id = dataArray.first;
 	var data = dataArray.drop(1);
 	var mktl = ~vessels[id];
+	NTMI.vessel.ids.add(id);
+	// optimize by vessel
 	if (mktl.notNil) {
-		// "setting % \n".postf(mktl);
-		mktl.elAt(\mag).deviceValueAction_(data[0..2]);
-		mktl.elAt(\angvel).deviceValueAction_(data[3..5]);
-		mktl.elAt(\accel).deviceValueAction_(data[6..8]);
-		mktl.elAt(\bt).deviceValueAction_(data[9]);
-		mktl.elAt(\wet).deviceValueAction_(data[10]);
+		if ([1, 3].includes(id)) {
+			// "setting % \n".postf(mktl);
+			mktl.elAt(\mag).deviceValueAction_(data[0..2]);
+			mktl.elAt(\angvel).deviceValueAction_(data[3..5]);
+			mktl.elAt(\accel).deviceValueAction_(data[6..8]);
+			mktl.elAt(\bt).deviceValueAction_(data[9]);
+		};
+		// merge wet 4 into 3
+		if (id == 4) {
+			~vessels[3].elAt(\wet).deviceValueAction_(data[10]);
+		};
+		if (id == 6) {
+			mktl.elAt(\wet).deviceValueAction_(data[10]);
+		};
+
 	}
 });
 
-
 ~dataTrace = List[];
 MFdef(\vesIn).add(\record, { |dataArray|
-	~dataTrace.add(dataArray);
-	~dataTrace.size.postln;
+	if (dataArray[1] == 3) {
+		~dataTrace.add(dataArray);
+		~dataTrace.size.postln;
+	}
 });
+MFdef(\vesIn).enable(\postRaw);
+MFdef(\vesIn).disable(\postRaw);
 
-MFdef(\vesIn).remove(\post);
-MFdef(\vesIn).remove(\record);
+/*
+fork {
+	~dataTrace = List[];
+	MFdef(\vesIn).enable(\record);
+	5.wait;
+	MFdef(\vesIn).disable(\record);
+	~dataTrace.size.postln;
+};
+*/
+
 
 /*
 ~dataTrace.flop.collect { |chan, i|
@@ -186,18 +265,24 @@ NTMI.vessel.desc = MKtlDesc.fromDict((
 		elements: [
 			(
 				key: 'mag',
-				shared: ( elementType: 'slider', ioType: \collectiveIn, \spec: [-33000, 33000] ),
-				elements: 3.collect { () }
+				shared: ( elementType: 'slider', ioType: \collectiveIn, \spec: [-10000, 10000] ),
+				elements: 3.collect {
+					(style: (width: 0.5, height: 2))
+				}
 			),
 			(
 				key: 'angvel',
 				shared: ( elementType: 'slider', ioType: \collectiveIn, \spec: [-1000, 1000] ),
-				elements: 3.collect { () }
+				elements: 3.collect {
+					(style: (width: 0.5, height: 2))
+				}
 			),
 			(
 				key: 'accel',
 				shared: ( elementType: 'slider', ioType: \collectiveIn, \spec: [-4, 4] ),
-				elements: 3.collect { () }
+				elements: 3.collect {
+					(style: (width: 0.5, height: 2))
+				}
 			),
 			( key: \bt, elementType: 'button',  \spec: [0, 1, \lin, 1]),
 			( key: \wet, elementType: 'slider',  \spec: [0, 2000]),
@@ -206,84 +291,14 @@ NTMI.vessel.desc = MKtlDesc.fromDict((
 ));
 );
 
-///// make all active vessels:
+///// make all active vessels here by ID:
 // the vessel IDs we use:
-~vesselIDs = [1, 2, 3, 4, 6];
+~vesselIDs = [1, 3, 4, 6];
 // info on what is on each vessel goes here ...
-
 
 ~vesselIDs.do { |id|
 	var name = "vessel%".format(id).asSymbol;
 	var mktl = MKtl(name, NTMI.vessel.desc);
+
 	~vessels.put(id, mktl);
 };
-
-/* test how relSet works
-MFdef(\setRelInf).(
-[0, 1, 2],  // influx input chan indices to use
-[0.1, 0.1, -0.1], // diff steps for each input
-1      // zoom factor for diffs
-).postln;
-
-//// magnetometer is distance.squared,
-//// so it has very low values until very close.
-/// how to rescale data for NTMI?
-
-~magExpo = 1;      // linear
-~magExpo = 0.5;    // square root
-~magExpo = 0.3;    // more sensitive at distance
-
-(-33000, -32900 .. 33000).collect { |val| val.abs ** ~magExpo * val.sign }.plot;
-
-// better use it on normalized values
-(-1, -0.99 .. 1).collect { |val| (val.abs ** ~magExpo) * val.sign }.plot;
-*/
-
-(
-// proximity curve for magnets:
-// 1 is linear, with less, e.g. 0.3, distant is more sensitive
-~magExpo = 0.5;
-
-// in the data receiving func,
-// take difference in mag etc values to change running sound params:
-MFdef(\vesIn).add(\mag2NTMI, { |dataArr|
-	var id = dataArr.first;
-	var vessMKtl = ~vessels[id];
-	var mapMags = { |val| val.abs ** ~magExpo * val.sign };
-
-	// vessel4 has wet only?
-	if (id == 4) {
-		var wet = vessMKtl.elAt(\wet);
-		var wetdiff = wet.value - wet.prevValue;
-		if (wetdiff != 0) {
-			MFdef(\setRelInf).(9, wetdiff * 3, 1);
-		}
-	};
-
-	// vessel 3 has all except wet
-	if (id == 3) {
-
-		var mags = vessMKtl.elAt(\mag);
-		// on mags rescale values so changes around the middle are bigger
-		var magdiffs = mapMags.(mags.value.unibi) - mapMags.(mags.prevValue.unibi);
-
-		var angs = vessMKtl.elAt(\angvel);
-		var angdiffs = angs.value - angs.prevValue;
-
-		var accels = vessMKtl.elAt(\angvel);
-		var acceldiffs = accels.value - accels.prevValue;
-
-		// do relative param set on the running slots:
-		// which influxIndices, the diffs, and a zoom (def. 1)
-		MFdef(\setRelInf).([0, 1, 2], magdiffs * 3, 1);
-		MFdef(\setRelInf).([0, 1, 2] + 3, angdiffs * 3, 1);
-		MFdef(\setRelInf).([0, 1, 2] + 6, acceldiffs * 3, 1);
-
-	};
-	// others can go here ...
-		if (id == 1) { };
-		if (id == 2) { };
-		if (id == 6) { };
-
-});
-);
