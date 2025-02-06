@@ -26,7 +26,9 @@ NTMI.nn = NTMI.nn ? ();
 // and these are the ts file paths found there:
 ~tspaths = (~nndir +/+ "*.ts").pathMatch;
 // post nicely
-~tspaths.collect(_.basename).printAll; ~tspaths.size.postln; "";
+"\n*** % MODELS AVAILABLE: \n".postf(~tspaths.size);
+~tspaths.collect(_.basename).printAll;
+"***\n\n".postln;
 
 if (NTMI.nn.loaded != true) {
 	"loading four models...".postln;
