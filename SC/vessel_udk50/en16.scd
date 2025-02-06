@@ -5,23 +5,6 @@ MKtl(\en16, "intech-grid");
 MKtl(\en16).gui;
 */
 
-// worry about decoupling later
-NTMI.nn.decoupled = Set[];
-NTMI.nn.toSetNow = { NTMI.nn.ndefs.select {|nd|
-	NTMI.nn.decoupled.includes(nd).not and: { nd.monitor.isPlaying }
-} };
-
-NTMI.nn.decouple = { |nn, ndef|
-	NTMI.nn.decoupled.add(ndef);
-};
-NTMI.nn.couple = { |nn, ndef|
-	NTMI.nn.decoupled.remove(ndef);
-};
-/*
-NTMI.nn.decouple(Ndef(\BBC_big));
-NTMI.nn.couple(Ndef(\BBC_big));
-*/
-
 // top buts select which ones to affect for param tuning
 MKtl(\en16).elAt(\bt, (0..3), \on).do { |bt| bt.action = nil };
 MKtl(\en16).elAt(\bt, (12..15), \on).do { |bt, i|
@@ -50,9 +33,9 @@ MKtl(\en16).elAt(\enc, (0..3)).do { |kn, i|
 // use lower 12 encoders for param tuning if knobs held;
 // else they do influx!
 MKtl(\en16).elAt(\enc, (4..15)).do { |kn, i|
-	var modelKeys = NTMI.nn.ndefs[0].controlKeys;
 	kn.deviceValue = 64;
 	kn.action = {
+		var modelKeys = NTMI.nn.ndefs[0].controlKeys;
 		var ndefIndices = MKtl(\en16).elAt(\bt, (0..3)).selectIndices(_.isOn);
 		var ndefs = NTMI.nn.ndefs[ndefIndices];
 		var delta = (kn.value - kn.prevValue).postln.clip2(0.05);
