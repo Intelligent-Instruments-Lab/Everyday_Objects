@@ -22,8 +22,8 @@ MKtl(\en16).elAt(\enc, (0..3)).do { |kn, i|
 	kn.deviceValue = 64;
 	kn.action = {
 		var ndef = NTMI.nn.ndefs[i];
-		var univol = \amp.asSpec.unmap(ndef.vol).postln;
-		var delta = (kn.value - kn.prevValue).postln.clip2(0.025);
+		var univol = \amp.asSpec.unmap(ndef.vol);
+		var delta = (kn.value - kn.prevValue).clip2(0.025);
 		ndef.vol = \amp.asSpec.map(univol + delta);
 		if (kn.deviceValue == 127) { kn.deviceValue = 120.postln };
 		if (kn.deviceValue == 0) { kn.deviceValue = 7.postln };
@@ -38,7 +38,7 @@ MKtl(\en16).elAt(\enc, (4..15)).do { |kn, i|
 		var modelKeys = NTMI.nn.ndefs[0].controlKeys;
 		var ndefIndices = MKtl(\en16).elAt(\bt, (0..3)).selectIndices(_.isOn);
 		var ndefs = NTMI.nn.ndefs[ndefIndices];
-		var delta = (kn.value - kn.prevValue).postln.clip2(0.05);
+		var delta = (kn.value - kn.prevValue).clip2(0.05);
 		if (ndefs.size > 0) {
 			var paramKey = modelKeys[i].postln;
 			ndefs.do { |ndef| RelSet(ndef, paramKey, delta) };

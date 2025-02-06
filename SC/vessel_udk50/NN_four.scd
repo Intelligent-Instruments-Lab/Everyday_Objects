@@ -93,6 +93,8 @@ NTMI.nn.pres = NTMI.nn.modelNames.collect { |name, idx|
 	ndef.addHalo(\namesToInflux, ndef.controlKeys.reject(_ == \sndSlot));
 	ndef.set(\sndSlot, idx);
 
+	ndef.vol = 0.25;
+
 	ndefpre = NdefPreset(ndef, ~latnames.keep(~maxLats));
 	ndefpre.storeToDisk = true;
 	ndefpre.storePath = NTMI.dir.userPOOL +/+ name ++".pxpreset.scd";
