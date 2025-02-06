@@ -50,7 +50,7 @@ MFdef(\setRelInfModel).add(\set, { |inIndices, diffs, zoom = 0.5|
 ~magExpo = 1;
 ~mapMags = { |val| val.abs ** ~magExpo * val.sign * 5 };
 
-NTMI.nn.move2inf = { |mktl, data|
+MFdef(\move2inf).add(\move, { |mktl, data|
 	var id = data[0];
 
 	// on mags rescale values so changes around the middle are bigger
@@ -71,11 +71,11 @@ NTMI.nn.move2inf = { |mktl, data|
 	// which influxIndices, the diffs, and a zoom (def. 1)
 	MFdef(\setRelInf).((0..8) + 3, diffs, NTMI.vessel3.zoom);
 	MFdef(\setRelInfModel).((0..8) + 3, diffs, NTMI.vessel3.zoom);
-};
+});
 
-MFdef(\v1).add(\move2inf, NTMI.nn[\move2inf]);
-MFdef(\v3).add(\move2inf, NTMI.nn[\move2inf]);
-MFdef(\v6).add(\move2inf, NTMI.nn[\move2inf]);
+MFdef(\v1).add(\move2inf, MFdef(\move2inf));
+MFdef(\v3).add(\move2inf, MFdef(\move2inf));
+MFdef(\v6).add(\move2inf, MFdef(\move2inf));
 );
 
 // MFdef(\v6).add(\move2inf, { |mktl, data|
