@@ -1,34 +1,10 @@
-[\water1, \aether2, \surprise3, \loop4].do { |name|
+[\s1Water, \s2Loop, \s3Surprise, \s4Aether ].do { |name|
 	Butz(\NTMI).add(name, { NTMI.q[name].value });
 };
 
+// general stuff:
 
-NTMI.nn.ndefs.do(_.set(\latSnd, 2.5, \liveIn, 0.5));
-NTMI.water1 = {
-	NTMI.currScene = \water1.postln;
-	/*
-	- cello amped - always
-	- water model, influx by vessels motion
-	- faders shift model area
-	- bring in cello input modulates into water?
-	- any synths?
-	*/
-
-	NTMI.mFX.remove('5HPF');
-	NTMI.ndefs.do(_.stop(5));
-	Ndef(\water).set(\latSnd, 0.0, \liveIn, 0);
-	Ndef(\water).play(fadeTime: 10);
-
-	Ndef(\guitar).stop(fadeTime: 2);
-	Ndef(\BBC_big).stop(fadeTime: 2);
-	Ndef(\marmals).stop(fadeTime: 2);
-
-	MFdef(\v3).enable(\move2inf);
-	MFdef(\v6).enable(\move2inf);
-
-};
-
-// my HPF:
+// custom HPF for aether
 ProxyChain.add3( '5HPF',
 	\filterIn -> { arg in, bpm=80, freqH = 2000, modH =3, rqH =1.2;
 		var fr, seq, tempo;
@@ -46,48 +22,75 @@ ProxyChain.add3( '5HPF',
 	]
 );
 
+
 /*
-scene 2: AETHER
-- slow build from nothing
-- master hipass, bring down with volume / more activity
-- cello delay patch played by one vessel? could be elefant, or
-
-chain 1 : singing drone, vessel 1,
-chain 2 : guitar model, vessel 2
-overall activity controls highpass
-3 params of proximity does latents (RAVE) / sound parameters (singing drone)
-
-//
+NTMI.mFX.proxyChain.slotNames;
+NTMI.mFX.add('0_comp', 1);
 */
 
-NTMI.aether2 = {
+// custom ducker for surprise?
+ProxyChain.add3( '0_comp',
+	\filterIn -> { arg in, depth = 2, relaxTime = 1, liveIn = 0.0;
+		var liveInSig = Ndef(\liveInput).ar(1);
+		var amp = Amplitude.ar(liveInSig, 0.001, relaxTime);
+		var duckedAmp = (1 - (amp * depth).clip(0, 1));
+		// duckedAmp.poll(10, "ducky");
+		(in * duckedAmp) + (liveInSig * liveIn);
+	},
+	1,
+	[
+		\depth, [0, 4, \amp],
+		\relaxTime, [0.03, 3, \exp],
+		\liveIn, [0, 1, \amp],
+	]
+);
 
+NTMI.s1Water = {
+
+	NTMI.currScene = \s1Water.postln;
+	/*
+	- cello amped - always
+	- water model, influx by vessels motion
+	- faders shift model area
+	- bring in cello input to modulate into water?
+	- synths to play ad lib
+	*/
+
+	NTMI.mFX.remove('0_comp', 1);
 	NTMI.mFX.remove('5HPF');
 
-	NTMI.ndefs[[0,2,3]].do(_.stop(5));
+	NTMI.ndefs[0].postln.vol = 0;
+	NTMI.slots.playAt(0);
 
-	NTMI.currScene = \aether2.postln;
+	NTMI.slots.stopAt(1);
+	NTMI.slots.stopAt(2);
+	NTMI.slots.stopAt(3);
 
-	NTMI.mFX.set(\rqH, 0.7, \freqH, 20000, \bpm, 23, \modH, 2);
-	NTMI.mFX.add('5HPF', 1);
-	// moogSing in slot 1
-	NTMI.ndefs.do(_.play(vol: 0.1, fadeTime: 10));
 
-	Ndef(\water).stop(fadeTime: 3);
-	Ndef(\guitar).play(vol: 0.1, fadeTime: 10);
-	Ndef(\guitar).set(\latSnd, 0.5, \liveIn, 2.5);
+	Ndef(\water).play(vol: 0.25, fadeTime: 10).postln;
 
-	MFdef(\actiFunc).enable(\setRel);
+	Ndef(\guitar).stop(fadeTime: 2);
+	Ndef(\BBC_big).stop(fadeTime: 2);
+	Ndef(\marmals).stop(fadeTime: 2);
 
-	MKtl('en16').elAt(\enc, 15).action = { |enc|
-		var diff = enc.value - enc.prevValue;
-		RelSet(NTMI.mFX.proxy, *[\freqH, diff]);
-		if (enc.deviceValue == 127) { enc.deviceValue = 120 };
-		if (enc.deviceValue == 0) { enc.deviceValue = 7 };
-	};
 
 };
 
+
+NTMI.s2Loop = {
+
+	NTMI.slots.playAt(0); NTMI.ndefs[0].vol = 0.1;
+	NTMI.slots.stopAt(1);
+	NTMI.slots.playAt(2); NTMI.ndefs[2].vol = 0.1;
+	NTMI.slots.stopAt(3);
+
+	Ndef(\BBC_big).play(vol: 0.25, fadeTime: 2).postln;
+	Ndef(\guitar).stop(fadeTime: 2);
+	Ndef(\water).stop(fadeTime: 2);
+	Ndef(\marmals).stop(fadeTime: 2);
+
+	// maybe add controlTable looping here?
+};
 
 // scene 3 : surprise
 /*
@@ -108,52 +111,60 @@ vessels
 
 */
 
-NTMI.surprise3 = {
+NTMI.s3Surprise = {
 	NTMI.currScene = \surprise3.postln;
 
+	NTMI.ndefs.do(_.vol_(0.1));
 	NTMI.slots.playAt(0);
 	NTMI.slots.playAt(1);
 	NTMI.slots.playAt(2);
 	NTMI.slots.playAt(3);
-	NTMI.ndefs.do(_.play(vol: 0.25));
 
-	NTMI.nn.ndefs.do(_.play(vol: 0.25));
-
+	NTMI.nn.ndefs.do(_.play(vol: 0.1));
 };
 
 
 /*
-LOOP
+scene 2: AETHER
+- slow build from nothing
+- master hipass, bring down with volume / more activity
+- cello delay patch played by one vessel? could be elefant, or
 
-    Cello circle bowing at first
-    Then builds into a loop navigating the “cello latent” that includes a circle bow as part of the loop
-    Second loop navigates cello latent in a different way
+chain 1 : singing drone, vessel 1,
+chain 2 : guitar model, vessel 2
+overall activity controls highpass
+3 params of proximity does latents (RAVE) / sound parameters (singing drone)
 
-    RAVE Orchestra + Feedback Reverb - create as complex sound as you can that you can also repeat. Use multiple vessels. Machine-like. Overlaps with cello loops
-    Make sure to use lots of pouring - different colours of liquid?
-    Use everyday actions
-    List of actions in natural language - machine-like, programming, pseudo-code, repeat x times then move onto next one
-    Add in accels and ralls etc
-    Second loop navigates vessels in a different way
-    Third loop is in sync between both players
-    Any vessels
+//
+*/
 
-- cello circle bowing -> loop
-- first loop: cello
-- second loop: cello + vessels (+ rave+feedback big sound, vessel movement loop)
-- third loop: vessels and cello sync
-    different sound material? again both, accels & ralls
-/
+NTMI.s4Aether = {
+	NTMI.currScene = \s4Aether.postln;
 
-// scee 4 : Loop
-NTMI.loop4 = {
-	NTMI.currScene = \loop4.postln;
-	// NTMI.mFX.add('5HPF').set(\rqH, 0.7, \freqH, 10000, \bpm, 23);
-	// // moogSing in slot 1
-	// NTMI.ndefs[1].play(vol: 0.25, fadeTime: 10);
-	//
-	// Ndef(\water).set(\latSnd, 0.5, \liveIn, 2.5);
-	// Ndef(\water).play(fadeTime: 10);
+	NTMI.mFX.add('5HPF');
+
+	NTMI.slots.playAt(3);
+	NTMI.slots.playAt(1);
+	NTMI.slots.stopAt(0);
+	NTMI.slots.stopAt(2);
+
+	NTMI.ndefs[[0,2,3]].do(_.stop(5));
+
+	NTMI.mFX.add('5HPF', 1);
+	NTMI.mFX.set(\rqH, 1.3, \freqH, 20000, \bpm, 23, \modH, 2);
+
+	Ndef(\water).stop(fadeTime: 3);
+	Ndef(\guitar).play(vol: 0.1, fadeTime: 10);
+
+	MFdef(\actiFunc).enable(\setRel);
+
+	Ndef(\moogSing).getHalo.keys
+
+	MKtl('en16').elAt(\enc, 15).action = { |enc|
+		var diff = enc.value - enc.prevValue;
+		RelSet(NTMI.mFX.proxy, *[\freqH, diff]);
+		if (enc.deviceValue == 127) { enc.deviceValue = 120 };
+		if (enc.deviceValue == 0) { enc.deviceValue = 7 };
+	};
 
 };
-
