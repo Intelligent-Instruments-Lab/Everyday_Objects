@@ -12,9 +12,9 @@ todo:
 
 // presets should store here:
 /Users/adc/NTMI/POOL/2_process/presets/bleepo.pxpreset.scd
-	NdefPreset(\water).storeToDisk = true;
-	NdefPreset(\water).storePath.openOS;
-	NdefPreset(\bleepo).storePath
+NdefPreset(\water).storeToDisk = true;
+NdefPreset(\water).storePath.openOS;
+NdefPreset(\bleepo).storePath
 
 
 NdefPreset(\BBC_big).storePath.openOS
@@ -114,11 +114,32 @@ NTMI.finalSetup = {
 	// avoid denormal complaints when volume is off;
 	MainFX(s).proxy.addSpec(\mainVol, [0.001, 4, \amp]);
 
-	Ndef(\liveInput).set('threshG', 0.0); // no noise gate
+	// customize sound input
+	[ \cello0, \roomMic1, \plonk2].do { |name| Spec.add(name, [0, 4, \amp]) };
+	Spec.add(\gateLev, [0, 0.25, \amp]);
+
+	Ndef(\liveInput, { |cello0 = 1, roomMic1 = 0.5, plonk2 = 0.5, gateLev=0.0|
+		var in = SoundIn.ar([0, 1, 2]);
+		var amps = [ cello0, roomMic1, plonk2].lag(0.3);
+		var snd = (in * amps).sum;
+		var ampli = Amplitude.kr(snd, 0, 2);
+		snd = (ampli>gateLev).lag(0.0, 1) * snd;
+
+		// noisegate
+		snd = Compander.ar(snd, snd, gateLev, 10, 1, 0.0001, 0.3);
+		// Limiter
+		snd = Compander.ar(snd, snd, 0.9, 1, 0.1, 0.0001, 0.3);
+
+		snd + BrownNoise.ar(0.00001); // no bangs!*/
+
+	});
+
 	NdefPreset(\bleepo).setCurr(\achter).setProxy(\achter);
 	NdefPreset(\moogSing).setCurr(\lizzes).setProxy(\lizzes);
 	NdefPreset(\revFB).setCurr(\ghosty).setProxy(\ghosty);
 	NdefPreset(\mayer).setRand(1.0, seed: 4711);
+
+
 
 	// redirect to the loadMe file in my dev folder:
 	LoadMe("~/src/Everyday_Objects/SC/vessel_udk50/loadMe_vessel.scd".standardizePath);
