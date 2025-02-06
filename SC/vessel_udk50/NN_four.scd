@@ -31,12 +31,16 @@ NTMI.nn = NTMI.nn ? ();
 "***\n\n".postln;
 
 if (NTMI.nn.loaded != true) {
-	"loading four models...".postln;
+	"*** loading four models:".postln;
 	NN.load(\BBC_big, ~nndir +/+ "BBC_big.ts", action: _.describe);
 	try { s.sync; 0.1.wait; };
+	"....".postln;
 	NN.load(\guitar, ~nndir +/+ "guitar_iil_b2048_r48000_z16.ts", action: _.describe);
 	try { s.sync; 0.1.wait; };
+	"....".postln;
+	try { s.sync; 0.1.wait; };
 	NN.load(\marmals, ~nndir +/+ "marinemammals_pondbrain_b2048_r48000_z20.ts", action: _.describe);
+	"....".postln;
 	NN.load(\water, ~nndir +/+ "water_pondbrain_b2048_r48000_z16.ts", action: _.describe);
 	try { s.sync; 0.1.wait; };
 	NTMI.nn.loaded = true;
