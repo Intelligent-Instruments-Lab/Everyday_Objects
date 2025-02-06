@@ -16,6 +16,8 @@ NdefPreset(\water).storeToDisk = true;
 NdefPreset(\water).storePath.openOS;
 NdefPreset(\bleepo).storePath
 
+MFdef(\vesIn).enable(\postRaw);
+MFdef(\vesIn).disable(\postRaw);
 
 NdefPreset(\BBC_big).storePath.openOS
 
@@ -105,6 +107,7 @@ NTMI.connectFoundInterfaces = false;
 NTMI.mfx = NTMI.mfx ? ();
 NTMI.mfx.domainName = \baseset;
 
+
 NTMI.finalSetup = {
 	///// retweak some settings
 	// tweak latency for no complaints
@@ -112,9 +115,10 @@ NTMI.finalSetup = {
 
 	Butz(\NTMI).remove(\miniNTMI);
 	// avoid denormal complaints when volume is off;
-	MainFX(s).proxy.addSpec(\mainVol, [0.001, 4, \amp]);
+	MainFX(s).proxy.addSpec(\mainVol, [0.000001, 4, \amp]);
+	MainFX(s).proxy.get(\mainVol);
 
-	// customize sound input
+	// customize sound input for vessels
 	[ \cello0, \roomMic1, \plonk2].do { |name| Spec.add(name, [0, 4, \amp]) };
 	Spec.add(\gateLev, [0, 0.25, \amp]);
 
@@ -134,14 +138,17 @@ NTMI.finalSetup = {
 
 	});
 
+	NTMI.slots.endOnStop = false;
+
 	NdefPreset(\bleepo).setCurr(\achter).setProxy(\achter);
 	NdefPreset(\moogSing).setCurr(\lizzes).setProxy(\lizzes);
 	NdefPreset(\revFB).setCurr(\ghosty).setProxy(\ghosty);
 	NdefPreset(\mayer).setRand(1.0, seed: 4711);
 
-
-
 	// redirect to the loadMe file in my dev folder:
+	/*
+	"~/src/Everyday_Objects/SC/vessel_udk50/loadMe_vessel.scd".standardizePath.openOS;
+	*/
 	LoadMe("~/src/Everyday_Objects/SC/vessel_udk50/loadMe_vessel.scd".standardizePath);
 };
 
