@@ -141,9 +141,18 @@ if (NTMI.vessel.devname.isNil) {
 	);
 };
 
-MFdef(\vesIn).add(\postRaw, { |dataArray| dataArray.drop(0).postln });
-MFdef(\vesIn).enable(\postRaw);
+MFdef(\vesIn).add(\postRaw, { |dataArray| if (dataArray[0] != 4) { dataArray.postln } });
 MFdef(\vesIn).disable(\postRaw);
+MFdef(\vesIn).add(\postID, { |dataArray| var id = dataArray[0]; if (id != 4) { id.postln } });
+MFdef(\vesIn).disable(\postID);
+
+MFdef(\vesIn).add(\post1, { |arr| if (arr[0] == 1) { arr.postln } }, false);
+MFdef(\vesIn).add(\post3, { |arr| if (arr[0] == 3) { arr.postln } }, false);
+MFdef(\vesIn).add(\post6, { |arr| if (arr[0] == 6) { arr.postln } }, false);
+MFdef(\vesIn).disable(\post1);
+MFdef(\vesIn).disable(\post3);
+MFdef(\vesIn).disable(\post6);
+
 
 
 // with my  cube magnets:
@@ -186,7 +195,7 @@ MFdef(\vesIn).add(\setMKtl, { |dataArray|
 	NTMI.vessel.ids.add(id);
 	// optimize by vessel
 	if (mktl.notNil) {
-		if ([1, 3].includes(id)) {
+		if ([1, 3, 6].includes(id)) {
 			// "setting % \n".postf(mktl);
 			mktl.elAt(\mag).deviceValueAction_(data[0..2]);
 			mktl.elAt(\angvel).deviceValueAction_(data[3..5]);
@@ -204,6 +213,7 @@ MFdef(\vesIn).add(\setMKtl, { |dataArray|
 	}
 });
 
+
 ~dataTrace = List[];
 MFdef(\vesIn).add(\record, { |dataArray|
 	if (dataArray[1] == 3) {
@@ -211,8 +221,7 @@ MFdef(\vesIn).add(\record, { |dataArray|
 		~dataTrace.size.postln;
 	}
 });
-MFdef(\vesIn).enable(\postRaw);
-MFdef(\vesIn).disable(\postRaw);
+MFdef(\vesIn).disable(\record);
 
 /*
 fork {
@@ -245,47 +254,34 @@ NTMI.vessel.desc = MKtlDesc.fromDict((
 
 	idInfo: ( ipAddress: "127.0.0.1", ),
 	protocol: \osc,
-	//////// should be done with collective set, not working yet
-	// collectives: (
-	// 	vals: (
-	// 		oscPath: 'vals',
-	// 		ioType: \in,
-	// 		// the order in this array determines the order how the message is parsed
-	// 		elements: [
-	// 			[\mag, 0], [\mag, 1], [\mag, 2],
-	// 			[\angvel, 0], [\angvel, 1], [\angvel, 2],
-	// 			[\accel, 0], [\accel, 1], [\accel, 2],
-	// 			[\bt], [\wet]
-	// 		],
-	//
-	// 	),
-	// ),
 
 	elementsDesc: (
 		elements: [
 			(
 				key: 'mag',
 				shared: ( elementType: 'slider', ioType: \collectiveIn, \spec: [-10000, 10000] ),
-				elements: 3.collect {
-					(style: (width: 0.5, height: 2))
+				elements: 3.collect { |i|
+					(style: (row: 0, column: i*0.5, width: 0.5, height: 2))
 				}
 			),
 			(
 				key: 'angvel',
 				shared: ( elementType: 'slider', ioType: \collectiveIn, \spec: [-1000, 1000] ),
-				elements: 3.collect {
-					(style: (width: 0.5, height: 2))
+				elements: 3.collect { |i|
+					(style: (row: 0, column: i*0.5 + 2, width: 0.5, height: 2))
 				}
 			),
 			(
 				key: 'accel',
 				shared: ( elementType: 'slider', ioType: \collectiveIn, \spec: [-4, 4] ),
-				elements: 3.collect {
-					(style: (width: 0.5, height: 2))
+				elements: 3.collect { |i|
+					(style: (row: 0, column: i*0.5 + 4, width: 0.5, height: 2))
 				}
 			),
 			( key: \bt, elementType: 'button',  \spec: [0, 1, \lin, 1]),
-			( key: \wet, elementType: 'slider',  \spec: [0, 2000]),
+			( key: \wet, elementType: 'slider',  \spec: [0, 2000],
+				style: (row: 0, column: 6, width: 0.5, height: 2)
+			)
 		]
 	)
 ));
@@ -298,7 +294,8 @@ NTMI.vessel.desc = MKtlDesc.fromDict((
 
 ~vesselIDs.do { |id|
 	var name = "vessel%".format(id).asSymbol;
-	var mktl = MKtl(name, NTMI.vessel.desc);
+	MKtl.all[name].free;
+	MKtl(name, NTMI.vessel.desc);
 
-	~vessels.put(id, mktl);
+	~vessels.put(id, MKtl(name));
 };

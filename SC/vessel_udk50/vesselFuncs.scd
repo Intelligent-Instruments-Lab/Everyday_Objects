@@ -6,14 +6,17 @@ NTMI.vessel.funcs.put(3, MFdef(\v3));
 NTMI.vessel.funcs.put(4, MFdef(\v4));
 NTMI.vessel.funcs.put(6, MFdef(\v6));
 
+MFdef(\v1).add(\post, { "v1".postln });
 MFdef(\v3).add(\post, { "v3".postln });
 MFdef(\v4).add(\post, { "v-4".postln });
 MFdef(\v6).add(\post, { "v---6".postln });
 
+MFdef(\v1).enable(\post);
 MFdef(\v3).enable(\post);
 MFdef(\v4).enable(\post);
 MFdef(\v6).enable(\post);
 
+MFdef(\v1).disable(\post);
 MFdef(\v3).disable(\post);
 MFdef(\v4).disable(\post);
 MFdef(\v6).disable(\post);
@@ -22,11 +25,6 @@ MFdef(\v6).disable(\post);
 NTMI.nn.ndefs.do { |ndef|
 	ndef.addHalo(\namesToInflux, ~latnames.keep(8));
 };
-
-// NTMI.nn.ndefs.do { |ndef|
-// 	ndef.addHalo(\namesToInflux, ~latnames.keep(8));
-// };
-
 
 MFdef(\setRelInfModel).value(4, 0.02);
 
@@ -78,6 +76,7 @@ MFdef(\v3).add(\move2inf, MFdef(\move2inf));
 MFdef(\v6).add(\move2inf, MFdef(\move2inf));
 );
 
+////////////////// BACKUP
 // MFdef(\v6).add(\move2inf, { |mktl, data|
 // 	var id = data[0];
 //
@@ -94,8 +93,6 @@ MFdef(\v6).add(\move2inf, MFdef(\move2inf));
 //
 // });
 
-
-
 ~vessel.activity = Activity.new;
 MFdef(\vesIn).add(\activity, { |datArr|
 	if (datArr[0] != 4) {
@@ -106,21 +103,18 @@ MFdef(\vesIn).add(\activity, { |datArr|
 		MFdef(\actiFunc).value(~vessel.activity.level);
 	};
 });
-);
-
-MFdef(\actiFunc).add(\post, {
-	~vessel.prevLevel
-	~vessel.activity.level.round(0.01).postln;
-	RelSet(NTMI.mFX.proxy, \freqH, ~vessel.activity)
-});
 
 MFdef(\actiFunc).add(\setRel, {
 	var acti = ~vessel.activity;
 	var level = acti.level;
 	var diff = level - (acti.getHalo(\prevLevel) ? level);
 	acti.addHalo(\prevLevel, level);
-
+	// "vess lev: % diff: %\n".postf(level.round(0.001), diff.round(0.001));
 	RelSet(NTMI.mFX.proxy, *[\freqH, diff * -0.2])
+});
+
+MFdef(\actiFunc).add(\post, {
+	("acti level: " + ~vessel.activity.level.round(0.01)).postln;
 });
 
 MFdef(\actiFunc).disable(\post);
