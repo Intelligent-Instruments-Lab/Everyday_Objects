@@ -25,6 +25,7 @@ WinBounds.stored.putAll( (
 	Butz(\NTMI).add(\MODELS);
 
 	LoadMe("scenes.scd", ~vessel.dir);
+	LoadMe("ctlTable.scd", ~vessel.dir);
 
 	// worry about decoupling later
 	NTMI.nn.decoupled = Set[];
@@ -62,6 +63,5 @@ WinBounds.stored.putAll( (
 	"*** VESSEL AND MODEL loading done!".postln;
 
 	Butz(\NTMI).run(\MODELS);
-
 
 }.forkIfNeeded(AppClock);
