@@ -105,7 +105,8 @@ NTMI.nn.pres = NTMI.nn.modelNames.collect { |name, idx|
 
 NTMI.nn.ndefs = NTMI.nn.pres.collect(_.proxy);
 
-
+// ndef group for switchable mixer (as in Polyharpye)
+NTMI.ndef.groups.put(\nn, NTMI.nn.ndefs);
 
 WinBounds.addMake(\MODELS, {
 	var w = Window("MODELS", Rect(400,200,820,700)).front;
