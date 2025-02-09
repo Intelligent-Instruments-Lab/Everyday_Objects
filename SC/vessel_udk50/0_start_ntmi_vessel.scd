@@ -1,68 +1,82 @@
 /* NTMI for vessels at udk 50:
 
-StartupFile.dialog
+*** Sound Vessels - Four Elements ***
 
-load NTMI first, then:
+Instruments:
+
+- Cello, amped directly via SSL direct monitoring,
+and going into models and sound processing
+- Four NTMI synthesis slots,
+influxed by Faderfox uc4 + vessels
+- Four RAVE Models, driven by mic sound,
+controlled by intech en16 controller
+
+Controllers:
+vessels 1, 3, 6, w. magnetometers, imu, water sensors
+Faderfox uc4 (for NTMI), intech en16 (models & specials)
+
+// this script loads NTMI first, then the Vessels setup:
 "~/src/Everyday_Objects/SC/vessel_udk50/loadMe_vessel.scd".standardizePath.openOS
 
-todo:
-1. reroute vessel4 wet to vessel3 wet, remove vessel4
-2. flexify setRelInf: allow variable custom ndef destinations
-2. prepare other scenes
 
-// presets should store here:
-/Users/adc/NTMI/POOL/2_process/presets/bleepo.pxpreset.scd
-NdefPreset(\water).storeToDisk = true;
-NdefPreset(\water).storePath.openOS;
-NdefPreset(\bleepo).storePath
+*** TODO, NOTES & QUESTIONS ***
 
-MFdef(\vesIn).enable(\postRaw);
+- water scene: maybe add activity?
+- generally add a separate acticity models on each MKtl?
+- NTMI synth sounds vol: adjust by general activity?
+- add gui(s) for activity
+
+// recording is 5 chans for stereo out and 3 mics
+s.recChannels = 5; s.record;
+
+
+
+////// SETUP and Tests ////
+
+**** VESSELS CHECK:
+- InfluxMixer should show MKtl(\vessel1), 3, 4, 6
+- vessel 1, 3, 6 should blink, 4 is white (its wet sensor goes to 3)
+
+// debugging vessels:
+MFdef(\vesIn).enable(\postRaw);   // all data
 MFdef(\vesIn).disable(\postRaw);
-
-NdefPreset(\BBC_big).storePath.openOS
-
-scene 1: WATER
-- cello amped
-- water model, influx by vessels
-- faders shift model area
-- cello input modulates into water
-- any synth
-
-scene 2: AETHER
-- slow build from nothing
-- master hipass, bring down with volume / more activity
-- cello delay patch played by one vessel? could be elefant, or
-
-chain 1 : singing drone, vessel 1,
-chain 2 : guitar model, vessel 2
-overall activity controls highpass
-3 params of proximity does latents (RAVE) / sound parameters (singing drone)
-
-
-scene 3 : surprise
-
-
-
-scee 4 : Loop
-
-//////////// debug: ////////
-// toggle postRaw for all interfaces
-MFdef(\vesIn).enable(\postRaw);
-MFdef(\vesIn).disable(\postRaw);
+MFdef(\vesIn).enable(\post1);     // by specific vessel
+MFdef(\vesIn).disable(\post1);
+MFdef(\vesIn).enable(\post3);
+MFdef(\vesIn).disable(\post3);
 MFdef(\vesIn).enable(\post3);
 MFdef(\vesIn).disable(\post3);
 
-~vessel.skipActi.stop;
-~vessel.skipActi.play;
-~vessel.activity;
+// global vessel activity is tracked here:
+~vessel.activity.level;
 
-NTMI.nn.pres;
-NTMI.nn.ndefs = NTMI.nn.pres.collect(_.proxy);
 
-NTMI.ndef.groups.put(\nn, );
+***** Four RAVE MODELS are here:
 
-NTMI.defaults;
+NTMI.nn.ndefs; // the four Models as Ndefs
+NTMI.nn.pres;  // and their NdefPresets
+NTMI.ndef.groups.nn; // and here as subgroup for mixer
+
+// Models presets should store in NTMI.dir.userPOOL
+NdefPreset(\water).storeToDisk; // should be true
+NdefPreset(\water).storePath.postln.openOS;
+
+**** Four SCENES are on Butz Window, click to switch
+s1Water, s2Loop, s3Surprise, s4Aether
+
+"~/src/Everyday_Objects/SC/vessel_udk50/scenes.scd".standardizePath.openOS;
+
 */
+
+// prep for recording in SC:
+// 2 chan stereo, 3 chans for mic inputs
+s.recChannels = 5;
+s.recHeaderFormat = \wav;
+// play mics out to chans 3-5 for recording raw
+Ndef(\liveInRec, { |cello0 = 1, roomMic1 = 0.5, plonk2 = 0.5, gateLev=0.0|
+	SoundIn.ar([0, 1, 2]);
+}).play(2);
+
 
 s.volume = -6;
 
