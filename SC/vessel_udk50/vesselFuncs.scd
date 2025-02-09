@@ -1,6 +1,7 @@
 
 // measure overall vessel activity
 (
+NTMI.vessel.funcs = NTMI.vessel.funcs ? ();
 NTMI.vessel.funcs.put(1, MFdef(\v1));
 NTMI.vessel.funcs.put(3, MFdef(\v3));
 NTMI.vessel.funcs.put(4, MFdef(\v4));
@@ -45,22 +46,23 @@ MFdef(\setRelInfModel).add(\set, { |inIndices, diffs, zoom = 0.5|
 
 (
 // influx by vessel motion:
-~magExpo = 1;
-~mapMags = { |val| val.abs ** ~magExpo * val.sign * 5 };
 
 MFdef(\move2inf).add(\move, { |mktl, data|
 	var id = data[0];
+	var magExpo = 1;
+	var mapMags = { |val| val.abs ** magExpo * val.sign };
 
 	// on mags rescale values so changes around the middle are bigger
 	var mags = mktl.elAt(\mag);
-	var magdiffs = ~mapMags.(mags.value.unibi) - ~mapMags.(mags.prevValue.unibi) * 2;
+	var magdiffs = mapMags.(mags.value.unibi) - mapMags.(mags.prevValue.unibi);
 
 	var angs = mktl.elAt(\angvel);
 	var angdiffs = angs.value - angs.prevValue;
 
 	var accels = mktl.elAt(\angvel);
 	var acceldiffs = accels.value - accels.prevValue;
-	var diffs = magdiffs ++ angdiffs ++ acceldiffs;
+	// make them really big...
+	var diffs = (magdiffs * 10) ++ (angdiffs * 10) ++ (acceldiffs * 10);
 
 	// ("move2inf" + id).postln;
 	// ("magdiffs: " + magdiffs.round(0.001)).postln;
