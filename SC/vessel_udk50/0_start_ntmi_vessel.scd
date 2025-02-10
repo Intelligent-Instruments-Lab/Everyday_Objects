@@ -70,12 +70,19 @@ s1Water, s2Loop, s3Surprise, s4Aether
 
 // prep for recording in SC:
 // 2 chan stereo, 3 chans for mic inputs
-s.recChannels = 5;
-s.recHeaderFormat = \wav;
-// play mics out to chans 3-5 for recording raw
-Ndef(\liveInRec, { |cello0 = 1, roomMic1 = 0.5, plonk2 = 0.5, gateLev=0.0|
-	SoundIn.ar([0, 1, 2]);
-}).play(2);
+NTMI.record = {
+	var path = ("~/Desktop/vessels_%.wav".format(Date.getDate.stamp));
+	"\n----\n*** NTMI.record: ".postln;
+	s.recChannels = 5;
+	// play mics out to chans 3-5 for recording raw
+	Ndef(\liveInRec, { |cello0 = 1, roomMic1 = 0.5, plonk2 = 0.5, gateLev=0.0|
+		SoundIn.ar([0, 1, 2]);
+	}).play(2);
+	s.recHeaderFormat("wav");
+	s.record(path);
+	thisFunction.postcs;
+	"----\n".postln;
+};
 
 
 s.volume = -6;
